@@ -3,16 +3,36 @@ using System.Collections;
 
 public class Cubie : MonoBehaviour {
 
-	public Cubie(Color faceAColor, Color faceBColor, Color faceCColor) {
-		Material materialA, materialB, materialC;
+	public enum Face
+	{
+		Top,
+		Bottom,
+		Left,
+		Right,
+		Front,
+		Back
+	};
 
-		materialA = GameObject.Find("FaceA").GetComponent<Renderer>().material;
-		materialB = GameObject.Find("FaceB").GetComponent<Renderer>().material;
-		materialC = GameObject.Find("FaceC").GetComponent<Renderer>().material;
+	public void Initialize(Color[] colorArray) {
+		Renderer[] faces = {
+			transform.Find("Top").GetComponent<Renderer>(),
+			transform.Find("Bottom").GetComponent<Renderer>(),
+			transform.Find("Left").GetComponent<Renderer>(),
+			transform.Find("Right").GetComponent<Renderer>(),
+			transform.Find("Front").GetComponent<Renderer>(),
+			transform.Find("Back").GetComponent<Renderer>()
+		};
 
-		materialA.color = faceAColor;
-		materialB.color = faceBColor;
-		materialA.color = faceCColor;
+		for (int i = 0; i < colorArray.Length; i++)
+		{
+			if (colorArray[i] == Color.clear)
+			{
+				faces[i].enabled = false;
+				continue;
+			}
+
+			faces[i].material.color = colorArray[i];
+		}
 	}
 
 	// Use this for initialization
