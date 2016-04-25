@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class Cubie : MonoBehaviour {
 
@@ -10,10 +11,20 @@ public class Cubie : MonoBehaviour {
 		Left,
 		Right,
 		Front,
-		Back
+		Back,
+		None
 	};
 
+	public int Axis = 0;
+	public int Direction = 0;
+	public float DegreesLeft = 0;
+
+	public static Face CurrentFace;
+
+	public static int LockBuffer = 0;
+
 	public void Initialize(Color[] colorArray) {
+
 		Renderer[] faces = {
 			transform.Find("Top").GetComponent<Renderer>(),
 			transform.Find("Bottom").GetComponent<Renderer>(),

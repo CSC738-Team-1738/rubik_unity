@@ -2,12 +2,14 @@
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="Unity.Instance.Unity Editor" />
   <MonoDevelop.Ide.Workbench ActiveDocument="Assets/Scripts/GameManager.cs">
     <Files>
-      <File FileName="Assets/Scripts/Cubie.cs" Line="15" Column="32" />
-      <File FileName="Assets/Scripts/GameManager.cs" Line="8" Column="26" />
+      <File FileName="Assets/Scripts/Cubie.cs" Line="15" Column="7" />
+      <File FileName="Assets/Scripts/GameManager.cs" Line="88" Column="6" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
     <BreakpointStore />
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
-  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches>
+    <Watch file="Assets/Scripts/GameManager.cs" line="38" offsetX="710" offsetY="555" expression="cubiePositions" liveUpdate="False" />
+  </MonoDevelop.Ide.DebuggingService.PinnedWatches>
 </Properties>
