@@ -1,4 +1,6 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -6,6 +8,7 @@ public class GameManager : MonoBehaviour {
 
 	public Camera mainCamera;
 	public GameObject cubiePrefab;
+	public Text shuffleCountText;
 
 	public float cameraSmoothing = 1.0f;
 
@@ -77,12 +80,12 @@ public class GameManager : MonoBehaviour {
 				}
 			}
 		}
-
-		Shuffle(20);
 	}
 	
 	// Update is called once per frame
 	void Update () {
+		ProcessControls();
+
 		ProcessMoves();
 
 		Transform cameraTransform = mainCamera.transform;
@@ -90,6 +93,28 @@ public class GameManager : MonoBehaviour {
 		//cameraTransform.RotateAround(Vector3.zero, Vector3.up, 20 * Time.deltaTime);
 
 		cameraTransform.LookAt(this.transform);
+	}
+
+	void ProcessControls() {
+		if (Cubie.LockBuffer > 0) {
+			return;
+		}
+
+		int direction = (Input.GetButton("Reverse")) ? -1 : 1;
+
+		if (Input.GetButtonUp("Top")) {
+			RotateFace(Cubie.Face.Top, direction);
+		} else if (Input.GetButtonUp("Bottom")) {
+			RotateFace(Cubie.Face.Bottom, direction);
+		} else if (Input.GetButtonUp("Front")) {
+			RotateFace(Cubie.Face.Front, direction);
+		} else if (Input.GetButtonUp("Back")) {
+			RotateFace(Cubie.Face.Back, direction);
+		} else if (Input.GetButtonUp("Left")) {
+			RotateFace(Cubie.Face.Left, direction);
+		} else if (Input.GetButtonUp("Right")) {
+			RotateFace(Cubie.Face.Right, direction);
+		}
 	}
 
 	void ProcessMoves() {
@@ -135,11 +160,15 @@ public class GameManager : MonoBehaviour {
 		}
 	}
 
-	void Shuffle(int n) {
+	public void Shuffle(int n) {
+		if (n == 0) {
+			n = Int32.Parse(shuffleCountText.text.ToString());
+		}
+
 		for (int i = 0; i < n; i++)
 		{
-			Cubie.Face face = (Cubie.Face)Random.Range(0, (int)Cubie.Face.None);
-			int direction = Random.Range(0, 2) * 2 - 1;
+			Cubie.Face face = (Cubie.Face)UnityEngine.Random.Range(0, (int)Cubie.Face.None);
+			int direction = UnityEngine.Random.Range(0, 2) * 2 - 1;
 
 			moveQueue.Enqueue(new KeyValuePair<Cubie.Face, int>(face, direction));
 		}
@@ -215,7 +244,7 @@ public class GameManager : MonoBehaviour {
 
 				currentCubie.Axis = dimension;
 				currentCubie.Direction = direction * offset;
-				currentCubie.DegreesLeft = 90;
+				currentCubie.DegreesLeft += 90;
 
 				Cubie.CurrentFace = face;
 				Cubie.LockBuffer++;
