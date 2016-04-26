@@ -10,6 +10,9 @@ public class GameManager : MonoBehaviour {
 	public GameObject cubiePrefab;
 	public Text shuffleCountText;
 
+	public float cameraVerticalBound = 5;
+	public float cameraHorizontalBound = 10;
+
 	public float cameraSmoothing = 1.0f;
 
 	public int dimensions = 3;
@@ -84,36 +87,59 @@ public class GameManager : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
+		ProcessCamera();
+
 		ProcessControls();
 
 		ProcessMoves();
+	}
+
+	void ProcessCamera() {
+		float percentX = Input.mousePosition.x / Screen.width;
+		float percentY = Input.mousePosition.y / Screen.height;
+
+		float cameraX = (-1 + 2 * percentX) * cameraHorizontalBound;
+		float cameraY = (-1 + 2 * percentY) * cameraVerticalBound;
 
 		Transform cameraTransform = mainCamera.transform;
 
-		//cameraTransform.RotateAround(Vector3.zero, Vector3.up, 20 * Time.deltaTime);
+		float cameraZ = cameraTransform.position.z;
+
+		if (Input.GetButton("BackCamera")) {
+			cameraZ = Math.Abs(cameraZ);
+		} else {
+			cameraZ = -1 * Math.Abs(cameraZ);
+		}
+
+		Vector3 targetPosition = new Vector3(cameraX, cameraY, cameraTransform.position.z);
+
+		float smoothing = Time.deltaTime * Vector3.Distance(cameraTransform.position, targetPosition);
+
+		Vector3 intermediateVector = Vector3.Lerp(cameraTransform.position, targetPosition, smoothing);
+
+		intermediateVector.z = cameraZ;
+
+		cameraTransform.position = intermediateVector;
 
 		cameraTransform.LookAt(this.transform);
 	}
 
 	void ProcessControls() {
-		if (Cubie.LockBuffer > 0) {
-			return;
-		}
 
 		int direction = (Input.GetButton("Reverse")) ? -1 : 1;
 
 		if (Input.GetButtonUp("Top")) {
-			RotateFace(Cubie.Face.Top, direction);
+			QueueMove(Cubie.Face.Top, direction);
 		} else if (Input.GetButtonUp("Bottom")) {
-			RotateFace(Cubie.Face.Bottom, direction);
+			QueueMove(Cubie.Face.Bottom, direction);
 		} else if (Input.GetButtonUp("Front")) {
-			RotateFace(Cubie.Face.Front, direction);
+			QueueMove(Cubie.Face.Front, direction);
 		} else if (Input.GetButtonUp("Back")) {
-			RotateFace(Cubie.Face.Back, direction);
+			QueueMove(Cubie.Face.Back, direction);
 		} else if (Input.GetButtonUp("Left")) {
-			RotateFace(Cubie.Face.Left, direction);
+			QueueMove(Cubie.Face.Left, direction);
 		} else if (Input.GetButtonUp("Right")) {
-			RotateFace(Cubie.Face.Right, direction);
+			QueueMove(Cubie.Face.Right, direction);
 		}
 	}
 
@@ -124,8 +150,6 @@ public class GameManager : MonoBehaviour {
 			}
 
 			KeyValuePair<Cubie.Face, int> move = moveQueue.Dequeue();
-
-			Debug.Log("moves in queue: " + moveQueue.Count);
 
 			RotateFace(move.Key, move.Value);
 			//Cubie.LockBuffer++; // Uncommenting this line prevents future moves from being dequeued.
@@ -162,7 +186,11 @@ public class GameManager : MonoBehaviour {
 
 	public void Shuffle(int n) {
 		if (n == 0) {
-			n = Int32.Parse(shuffleCountText.text.ToString());
+			try {
+				n = Int32.Parse(shuffleCountText.text.ToString());
+			} catch (FormatException e) {
+				n = 20;
+			}
 		}
 
 		for (int i = 0; i < n; i++)
@@ -170,8 +198,12 @@ public class GameManager : MonoBehaviour {
 			Cubie.Face face = (Cubie.Face)UnityEngine.Random.Range(0, (int)Cubie.Face.None);
 			int direction = UnityEngine.Random.Range(0, 2) * 2 - 1;
 
-			moveQueue.Enqueue(new KeyValuePair<Cubie.Face, int>(face, direction));
+			QueueMove(face, direction);
 		}
+	}
+
+	void QueueMove(Cubie.Face face, int direction) {
+		moveQueue.Enqueue(new KeyValuePair<Cubie.Face, int>(face, direction));
 	}
 
 	void RotateFace (Cubie.Face face, int direction, int layer = -1) {
