@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 public class GameManager : MonoBehaviour {
 
@@ -189,6 +190,7 @@ public class GameManager : MonoBehaviour {
 			try {
 				n = Int32.Parse(shuffleCountText.text.ToString());
 			} catch (FormatException e) {
+				Debug.Log(e);
 				n = 20;
 			}
 		}
@@ -282,6 +284,83 @@ public class GameManager : MonoBehaviour {
 				Cubie.LockBuffer++;
 			}
 
+		}
+	}
+
+	public void Solve () {
+		string url = "http://localhost:8888/cube/solver/LU,FL,UB,DB,UF,DF,RD,UR,RB,RF,BL,DL,FUL,RBU,BDL,UBL,DBR,FLD,DRF,UFR";
+
+		WWW www = new WWW(url);
+
+		StartCoroutine(WaitForRequest(www));
+	}
+
+	IEnumerator WaitForRequest(WWW www) {
+		yield return www;
+
+		if (www.error == null) {
+			ServerResponse serverResponse = new ServerResponse();
+
+			serverResponse = JsonUtility.FromJson<ServerResponse>(www.text);
+
+			string[] moveList = serverResponse.solution.Split(new string[] {","}, StringSplitOptions.None);
+
+			foreach (string move in moveList) {
+				Cubie.Face face = Cubie.Face.Top;
+				int direction = 1;
+				string faceString = "", directionString = "";
+
+				string pattern = @"([A-Z])";
+				MatchCollection matches = Regex.Matches(move, pattern);
+
+				if (matches.Count > 0 && matches[0].Groups.Count > 1) {
+					faceString = matches[0].Value;
+				}
+
+				pattern = @"([^A-Z])";
+				matches = Regex.Matches(move, pattern);
+
+				if (matches.Count > 0 && matches[0].Groups.Count > 1) {
+					directionString = matches[0].Value;
+				}
+
+				switch (faceString) {
+				case "U": 
+					face = Cubie.Face.Top;
+					break;
+				case "D":
+					face = Cubie.Face.Bottom;
+					break;
+				case "F":
+					face = Cubie.Face.Front;
+					break;
+				case "B":
+					face = Cubie.Face.Back;
+					break;
+				case "L":
+					face = Cubie.Face.Left;
+					break;
+				case "R":
+					face = Cubie.Face.Right;
+					break;
+				default:
+					break;
+				}
+
+				if (directionString == "'") {
+					direction = -1;
+				} else {
+					direction = 1;
+				}
+
+				QueueMove(face, direction);
+
+				if (directionString == "2") {
+					QueueMove(face, direction);
+				}
+			}
+		} else {
+			Debug.Log("WWW Error: " + www.error);
 		}
 	}
 }
