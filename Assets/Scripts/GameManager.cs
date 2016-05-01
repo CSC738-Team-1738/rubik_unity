@@ -25,6 +25,22 @@ public class GameManager : MonoBehaviour {
 
 	private Queue<KeyValuePair<Cubie.Face, int>> moveQueue;
 
+	private int[] currentState = {
+		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	};
+
+	private string[] goal = {"UF", "UR", "UB", "UL", "DF", "DR", "DB", "DL", "FR", "FL", "BR", "BL", "UFR", "URB", "UBL", "ULF", "DRF", "DFL", "DLB", "DBR"};
+
+	private int[,] affectedCubies = new int[6, 8] {
+		{0,  1,  2,  3,  0,  1,  2,  3},
+		{4,  7,  6,  5,  4,  5,  6,  7},
+		{0,  9,  4,  8,  0,  3,  5,  4},
+		{2, 10,  6, 11,  2,  1,  7,  6},
+		{3, 11,  7,  9,  3,  2,  6,  5},
+		{1,  8,  5, 10,  1,  0,  4,  7}
+	};
+
 	// Use this for initialization
 	void Start () {
 		cubies = new List<GameObject>();
@@ -209,32 +225,38 @@ public class GameManager : MonoBehaviour {
 	}
 
 	void RotateFace (Cubie.Face face, int direction, int layer = -1) {
-		int dimension = 0, offset = 0;
+		int dimension = 0, offset = 0, faceNum = 0;
 
 		switch (face) {
 		case Cubie.Face.Front:
 			dimension = 2;
 			offset = -1;
+			faceNum = 2;
 			break;
 		case Cubie.Face.Back:
 			dimension = 2;
 			offset = 1;
+			faceNum = 3;
 			break;
 		case Cubie.Face.Bottom:
 			dimension = 1;
 			offset = -1;
+			faceNum = 1;
 			break;
 		case Cubie.Face.Top:
 			dimension = 1;
 			offset = 1;
+			faceNum = 0;
 			break;
 		case Cubie.Face.Left:
 			dimension = 0;
 			offset = -1;
+			faceNum = 4;
 			break;
 		case Cubie.Face.Right:
 			dimension = 0;
 			offset = 1;
+			faceNum = 5;
 			break;
 		}
 
@@ -243,6 +265,9 @@ public class GameManager : MonoBehaviour {
 		}
 
 		offset *= layer;
+
+		int turns = (direction < 0) ? 2 : 0;
+		ApplyMove(faceNum * 3 + turns);
 
 		for (int i = 0; i < cubiePositions.Count; i++) {
 			Vector3 cubiePosition = cubiePositions[i];
@@ -288,7 +313,25 @@ public class GameManager : MonoBehaviour {
 	}
 
 	public void Solve () {
-		string url = "http://localhost:8888/cube/solver/LU,FL,UB,DB,UF,DF,RD,UR,RB,RF,BL,DL,FUL,RBU,BDL,UBL,DBR,FLD,DRF,UFR";
+		string[] state = new string[20];
+
+		for (int i = 0; i < 20; i++) {
+			string s = goal[currentState[i]];
+
+			for (int j = 0; j < currentState[i+20]; j++) {
+				if (s.Length == 2) {
+					s = s.Substring(1, 1) + s.Substring(0, 1);
+				} else {
+					s = s.Substring(2, 1) + s.Substring(0, 2);
+				}
+			}
+
+			state[i] = s;
+		}
+
+		string stateString = string.Join(",", state);
+
+		string url = "http://localhost:8888/cube/solver/" + stateString;
 
 		WWW www = new WWW(url);
 
@@ -362,5 +405,39 @@ public class GameManager : MonoBehaviour {
 		} else {
 			Debug.Log("WWW Error: " + www.error);
 		}
+	}
+
+	void ApplyMove(int move) {
+		int turns = move % 3 + 1;
+		int face = move / 3;
+
+		while( turns-- != 0 ){
+			int[] oldState = new int[40];
+			currentState.CopyTo(oldState, 0);
+
+			for(int i=0; i<8; i++){
+				int isCorner = (i > 3) ? 1 : 0;
+				int target = affectedCubies[face, i] + isCorner*12;
+				int killer = affectedCubies[face, (i & 3) == 3 ? i - 3 : i + 1] + isCorner*12;
+
+				int orientationDelta = 0;
+				if (i < 4) {
+					orientationDelta = (face > 1 && face < 4) ? 1 : 0;
+				} else if (face < 2) { 
+					orientationDelta = 0;
+				} else {
+					orientationDelta = 2 - (i & 1);
+				}				
+
+				currentState[target] = oldState[killer];
+				currentState[target + 20] = oldState[killer + 20] + orientationDelta;
+
+				if(turns == 0)
+					currentState[target + 20] %= 2 + isCorner;
+			}
+		}
+
+
+		Debug.Log(currentState);
 	}
 }
